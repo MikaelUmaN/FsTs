@@ -15,30 +15,32 @@ module Fitting =
         let myDist = Normal(0., 3.)
         let stdDist = ContinuousUniform(1e-2, 4.)
 
-        let likelihood my std =
+        // Evaluate the density function at all observations for the given parameters
+        let densityEval my std =
             let nd = Normal(my, std)
             xs
             |> Array.map (fun x -> nd.Density(x)) // Prob of this point for the given dist
-            |> Array.fold (*) 1. // Likelihood (probably really small number...) -> need logs
 
         // The acceptance probability function.
-        let alfa (myTheta, stdTheta) (myThetan, stdThetan) =
-            let thetaL = likelihood myTheta stdTheta
-            let thetanL = likelihood myThetan stdThetan
+        let alfa (myCandidate, stdCandidate) (myThetan, stdThetan) =
+            let densitiesCandidate = densityEval myCandidate stdCandidate
+            let densitiesThetan = densityEval myThetan stdThetan
 
-            // TODO: currently only supporting independence hastings
-            //let myThetaDiff = myTheta - myThetan
-            //let stdThetaDiff = stdTheta - stdThetan
-            let numerator = 
-                (thetaL * myDist.Density(myTheta) * stdDist.Density(stdTheta)) * 
-                (myDist.Density(myTheta)) * // Independence hastings, unconditional probabilities
-                (stdDist.Density(stdTheta))
-            let denominator = 
-                (thetanL * myDist.Density(myThetan) * stdDist.Density(stdThetan)) * 
-                (myDist.Density(myThetan)) *
-                (stdDist.Density(stdThetan))
+            // TODO: maybe we don't have to convert to logs if the ratios don't go crazy?
+            let ratios = 
+                Array.zip densitiesCandidate densitiesThetan 
+                |> Array.map (fun (x, y) -> x/y)
+            let likelihoodRatio = ratios |> Array.fold (*) 1.
 
-            min (numerator/denominator) 1.
+            // likelihood * prior * proposalDistribution
+            // TODO: currently just supports Indepdence MH, unconditional probabilities
+            let proposalDistRatio =
+                myDist.Density(myThetan) * stdDist.Density(stdThetan) /
+                myDist.Density(myCandidate) * stdDist.Density(stdCandidate)
+
+            let a = likelihoodRatio * proposalDistRatio
+
+            min a 1.
 
 
         let rec metropolisHastings my std i  =
