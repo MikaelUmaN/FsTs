@@ -2,14 +2,20 @@ namespace FsTs
 
 module Model =
 
-    open MathNet.Numerics.Distributions
+    /// A target model to fit data to.
+    type IModel =
 
+        /// Evaluates the density at the given parameters
+        abstract Density: float[] -> float -> float 
+
+
+    // Below was just a test...
     type ModelSpec =
     | AR of p: int
     | MA of q: int
     | Composition of ModelSpec * ModelSpec
 
-    type IModel =
+    type IModelOld =
 
         abstract Spec: ModelSpec
 
@@ -34,7 +40,7 @@ module Model =
         /// X_t = phit*X_t-1 + z_t 
         let xt bxt phit zt = my + phit*bxt + zt
 
-        interface IModel with
+        interface IModelOld with
 
             member __.Spec = spec
 
@@ -45,15 +51,14 @@ module Model =
                 xs.AddRange(Array.zeroCreate p)
                 let zs = Distributions.sampleZ
                 
-                // TODO: nu stöds bara AR1 haha.
+                // TODO: nu stï¿½ds bara AR1 haha.
                 Seq.initInfinite (
                     fun i ->
                         
                         // Compute the autoregressive sum
                         let sumXt = 
                             Array.zip phis (xs.ToArray())
-                            |> Array.map (fun (phi, x) -> phi * x)
-                            |> Array.sum
+                            |> Array.sumBy (fun (phi, x) -> phi * x)
 
                         // Sample innovation and compute new Xt.
                         let z = Seq.take 1 zs |> Seq.exactlyOne

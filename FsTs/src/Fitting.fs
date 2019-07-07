@@ -3,28 +3,24 @@
 /// Module for fitting model parameters to data using Bayesian statistics.
 module Fitting =
 
+    open Model
+    open Distributions
     open MathNet.Numerics.Distributions
 
-    // TODO: Generalize...
-    /// Given observations, fits a normal distribution to it.
-    let fitNormal (xs: float[]) =
-
-        // TODO: prior distributions should be supplied by user.
-        // my ~ N(0, 1)
-        // std ~ U(0+, 4)
-        let myDist = Normal(0., 3.)
-        let stdDist = ContinuousUniform(1e-2, 4.)
+    /// Given data observations, fits a model to it using
+    /// a set of proposal distributions.
+    let fitModel (data: float[], model: IModel, propDists: IProposalDistribution[], initialGuess: float[]) =
 
         // Evaluate the density function at all observations for the given parameters
-        let densityEval my std =
-            let nd = Normal(my, std)
-            xs
-            |> Array.map (fun x -> nd.Density(x)) // Prob of this point for the given dist
+        let densityEval pDists =
+            let d = model.Density pDists
+            data
+            |> Array.map d // Prob of this point for the given dist
 
         // The acceptance probability function.
-        let alfa (myCandidate, stdCandidate) (myThetan, stdThetan) =
-            let densitiesCandidate = densityEval myCandidate stdCandidate
-            let densitiesThetan = densityEval myThetan stdThetan
+        let alfa candidateTheta currentTheta =
+            let densitiesCandidate = densityEval candidateTheta
+            let densitiesThetan = densityEval currentTheta
 
             // TODO: maybe we don't have to convert to logs if the ratios don't go crazy?
             let ratios = 
@@ -34,31 +30,37 @@ module Fitting =
 
             // likelihood * prior * proposalDistribution
             // TODO: currently just supports Indepdence MH, unconditional probabilities
-            let proposalDistRatio =
-                myDist.Density(myThetan) * stdDist.Density(stdThetan) /
-                myDist.Density(myCandidate) * stdDist.Density(stdCandidate)
-
+            let proposalDistNumerator =
+                propDists 
+                |> Array.zip currentTheta
+                |> Array.map (fun (x, pd) -> pd.Density(x))
+                |> Array.fold (*) 1.
+            let proposalDistDenominator =            
+                propDists 
+                |> Array.zip candidateTheta
+                |> Array.map (fun (x, pd) -> pd.Density(x))
+                |> Array.fold (*) 1.
+            let proposalDistRatio = proposalDistNumerator / proposalDistDenominator
             let a = likelihoodRatio * proposalDistRatio
-
             min a 1.
 
+        let metropolisHastings current =
+            // Generate proposal from distributions.
+            let candidates = propDists |> Array.map (fun pd -> pd.Sample())
 
-        let rec metropolisHastings my std i  =
-            // need some way to stop...
-            if (i > 100_000) then
-                (my, std)
+            // Compute acceptance probability
+            let a = alfa candidates current
+            let u = ContinuousUniform.Sample(0., 1.)
+            if (a > u) then
+                candidates
             else
-                // Generate proposal from distributions.
-                let myProposal = myDist.Sample()
-                let thetaProposal = stdDist.Sample()
+                current
 
-                // Compute acceptance probability
-                let a = alfa (myProposal, thetaProposal) (my, std)
-                let u = ContinuousUniform.Sample(0., 1.)
-                if (a > u) then
-                    metropolisHastings myProposal thetaProposal (i+1)
-                else
-                    metropolisHastings my std (i+1)
-
-        metropolisHastings 0. 1. 0
+        // Infinite seqeunce of parameter proposals.
+        let mutable theta = initialGuess
+        seq {
+            while (true) do 
+                theta <- metropolisHastings theta
+                yield theta
+        }
 

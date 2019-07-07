@@ -1,27 +1,60 @@
 ﻿namespace FsTs.Test
 
 open FsTs
-open FsTs.Fitting
+open FsTs.Model
+open FsTs.Distributions
 open Xunit
 open MathNet.Numerics.Distributions
+open MathNet.Numerics.Statistics
 
 type FittingTest() =
 
     [<Fact>]
     member __.FitNormalTest() =
 
-        // Distribution to fit.
-        let my = 1.2
-        let std = 1.5
+        // Data to fit.
+        let my = ContinuousUniform.Sample(0., 5.)
+        let std = ContinuousUniform.Sample(1e-1, 5.)
         let x = Normal.Samples(my, std) |> Seq.take 1000 |> Seq.toArray
 
-        // Sample size 250 works well, but size 500 -> explodes and stays at 0, 1...
-        // Probably need to work with log
+        // Model to fit data to.
+        let normalModel =
+            { new IModel with
+                member __.Density theta x =
+                    let nd = Normal(theta.[0], theta.[1])
+                    nd.Density(x)
+            }
 
-        // TODO: this will give back just a sample from the posterior distribution,
-        // of course we want the sequence from which we can sample from the
-        // posterior distribution and calculate mean, moments and so on.
-        let (myFit, stdFit) = Fitting.fitNormal x
+        // Proposal distributions used to sample new candidate model parameters.
+        let pDists = [| 
+            NormalProposalDistribution(0., 5.) :> IProposalDistribution
+            ContinuousUniformProposalDistribution(1e-2, 10.) :> IProposalDistribution
+        |]
 
-        Assert.InRange(myFit, my - my*0.3, my + my*0.3)
-        Assert.InRange(stdFit, std - std*0.3, std + std*0.3)
+        // Get a sequence of parameters and compute statistics from the tail of it.
+        let paramSeq = Fitting.fitModel(x, normalModel, pDists, [| 0.; 1e-2 |])
+        let paramEstimates = 
+            paramSeq 
+            |> Seq.take 10_000
+            |> Seq.toArray
+        let myEstimates = 
+            paramEstimates 
+            |> Seq.skip 9_000
+            |> Seq.map (fun theta -> theta.[0])
+        let stdEstimates = 
+            paramEstimates 
+            |> Seq.skip 9_000
+            |> Seq.map (fun theta -> theta.[1])
+        let myMean = Statistics.Mean myEstimates
+        let stdMean = Statistics.Mean stdEstimates
+        let myStd = Statistics.Variance myEstimates
+        let stdStd = Statistics.Variance stdEstimates
+        
+        // Then the means are well within our tolerated range
+        let tol = 0.15
+        Assert.InRange(myMean, my - my*tol, my + my*tol)
+        Assert.InRange(stdMean, std - std*tol, std + std*tol)
+
+        // And the variance of parameter estimates should be limited.
+        Assert.True(myStd < 1e-8)
+        Assert.True(stdStd < 1e-8)
