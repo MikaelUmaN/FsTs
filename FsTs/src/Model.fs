@@ -5,9 +5,11 @@ module Model =
     /// A target model to fit data to.
     type IModel =
 
-        /// Evaluates the density at the given parameters
-        abstract Density: float[] -> float -> float 
+        /// Evaluates the likelihood of a data point at the given parameters
+        abstract Likelihood: theta:float[] -> x:float -> float
 
+        /// Evaluates the prior densities at the given parameter values.
+        abstract PriorDensities: theta:float[] -> float[]
 
     // Below was just a test...
     type ModelSpec =

@@ -8,7 +8,7 @@ module Distributions =
 
     /// A distribution used to sample new proposals
     /// for parameters.
-    type IProposalDistribution =
+    type IDistribution =
 
         /// Generates a new sample from the distribution.
         abstract Sample: unit -> float
@@ -16,16 +16,42 @@ module Distributions =
         /// Computes the density of the distribution at the given point.
         abstract Density: float -> float
 
+    /// A proposal distribution where the density and sampling functions
+    /// are dependent on the previous state in the markov chain.
+    type IConditionalDistribution =
+        inherit IDistribution
+
+        /// Generates a new sample from the distribution,
+        /// conditional on the past sample being xprev.
+        abstract ConditionalSample: xprev:float -> float
+
+        /// Comptutes the density of x, conditional on the
+        /// previous state xprev.
+        abstract ConditionalDensity: x:float -> xprev:float -> float
+
     /// Normal proposal distribution.
-    type NormalProposalDistribution(my, std) =
+    type NormalDistribution(my, std) =
         let nd = Normal(my, std)
-        interface IProposalDistribution with
+        interface IConditionalDistribution with
             member __.Sample() = nd.Sample()
             member __.Density(x) = nd.Density(x)
+            member __.ConditionalSample(xprev) =
+                let ndm = Normal(my + xprev, std) // Prev state shifts the mean.
+                ndm.Sample()
+            member __.ConditionalDensity x xprev = 
+                let ndm = Normal(my + xprev, std) // Prev state shifts the mean.
+                ndm.Density(x)
+
 
     /// Continuous uniform proposal distribution.
-    type ContinuousUniformProposalDistribution(lower, upper) =
+    type ContinuousUniformDistribution(lower, upper) =
         let ud = ContinuousUniform(lower, upper)
-        interface IProposalDistribution with
+        interface IConditionalDistribution with
             member __.Sample() = ud.Sample()
-            member __.Density(x) = ud.Density(x)  
+            member __.Density(x) = ud.Density(x)
+            member __.ConditionalSample(xprev) =
+                let udm = ContinuousUniform(lower + xprev, upper + xprev)
+                udm.Sample()
+            member __.ConditionalDensity x xprev =
+                let udm = ContinuousUniform(lower + xprev, upper + xprev)
+                udm.Density(x)

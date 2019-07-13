@@ -5,7 +5,7 @@
   <ItemGroup>
     <Compile Include="Distributions.fs" />
     <Compile Include="Model.fs" />
-    <Compile Include="Fitting.fs" />
+    <Compile Include="Mcmc.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="4.8.1" />

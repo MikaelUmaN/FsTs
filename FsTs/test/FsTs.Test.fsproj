@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="FittingTest.fs" />
+    <Compile Include="McmcTest.fs" />
     <Compile Include="ModelTest.fs" />
   </ItemGroup>
 
