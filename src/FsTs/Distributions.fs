@@ -6,8 +6,7 @@ module Distributions =
 
     let sampleZ = Normal.Samples(0., 1.)
 
-    /// A distribution used to sample new proposals
-    /// for parameters.
+    /// A continuous probability distribution.
     type IDistribution =
 
         /// Generates a new sample from the distribution.
@@ -16,42 +15,42 @@ module Distributions =
         /// Computes the density of the distribution at the given point.
         abstract Density: float -> float
 
-    /// A proposal distribution where the density and sampling functions
-    /// are dependent on the previous state in the markov chain.
-    type IConditionalDistribution =
-        inherit IDistribution
-
-        /// Generates a new sample from the distribution,
-        /// conditional on the past sample being xprev.
-        abstract ConditionalSample: xprev:float -> float
-
-        /// Comptutes the density of x, conditional on the
-        /// previous state xprev.
-        abstract ConditionalDensity: x:float -> xprev:float -> float
-
-    /// Normal proposal distribution.
-    type NormalDistribution(my, std) =
-        let nd = Normal(my, std)
-        interface IConditionalDistribution with
-            member __.Sample() = nd.Sample()
-            member __.Density(x) = nd.Density(x)
-            member __.ConditionalSample(xprev) =
-                let ndm = Normal(my + xprev, std) // Prev state shifts the mean.
-                ndm.Sample()
-            member __.ConditionalDensity x xprev = 
-                let ndm = Normal(my + xprev, std) // Prev state shifts the mean.
-                ndm.Density(x)
+    type GammaDistribution(shape, rate) =
+        interface IDistribution with
+            member __.Sample() = Gamma.Sample(shape, rate)
+            member __.Density x = Gamma.PDF(shape, rate, x)
 
 
-    /// Continuous uniform proposal distribution.
-    type ContinuousUniformDistribution(lower, upper) =
-        let ud = ContinuousUniform(lower, upper)
-        interface IConditionalDistribution with
-            member __.Sample() = ud.Sample()
-            member __.Density(x) = ud.Density(x)
-            member __.ConditionalSample(xprev) =
-                let udm = ContinuousUniform(lower + xprev, upper + xprev)
-                udm.Sample()
+    type NormalDistribution(my, sigma) =
+        interface IDistribution with
+            member __.Sample() = Normal.Sample(my, sigma)
+            member __.Density x = Normal.PDF(my, sigma, x)
+
+
+    /// A multivariate proposal distribution used to propose new values
+    /// of parameters used in a model.
+    type IProposalDistribution =
+
+        /// Conditionally samples new parameter proposals
+        /// based on the previous value.
+        abstract ConditionalSample: xprev:float[] -> float[] 
+
+        /// Conditionally computes the density of x, given the
+        /// previous value of xprev. That is, the jump from xprev to x.
+        abstract ConditionalDensity: x:float[] -> xprev:float[] -> float[]
+
+    /// Creates an independent multivariate proposal distribution consisting of the given
+    /// input distributions.
+    let independentMultivariateProposalDistribution (dists: array<#IDistribution>) =
+        { new IProposalDistribution with
+            member __.ConditionalSample xprev =
+                xprev
+                |> Array.zip dists
+                |> Array.map (fun (d, x) -> d.Sample() + x)
             member __.ConditionalDensity x xprev =
-                let udm = ContinuousUniform(lower + xprev, upper + xprev)
-                udm.Density(x)
+                xprev
+                |> Array.zip x
+                |> Array.map (fun (x, xprev) -> x - xprev)
+                |> Array.zip dists
+                |> Array.map (fun (d, y) -> d.Density(y))
+        }

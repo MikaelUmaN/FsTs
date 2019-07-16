@@ -7,37 +7,30 @@ module Mcmc =
     open Distributions
     open MathNet.Numerics.Distributions
 
-    /// Algorithms to use for sampling from the joint posterior distribution
-    /// of the parameters given the observed data.
-    type Algorithm =
-        /// Requires that the proposal distribution be symmetric.
-        | Metropolis
-        /// Corrects any asymmetry in the proposal distribution.
-        | MetropolisHastings
-
-    // TODO: Only supports Metropolis-Hastings
     /// Given data observations, fits a model to it using a set of proposal distributions.
-    let fitModel
-        (data: float[])
-        (model: IModel)
-        (propDists: IConditionalDistribution[]) 
-        (initialGuess: float[]) =
+    let mcmcMhSeq
+        data
+        (model: #IModel)
+        (propDist: #IProposalDistribution) 
+        initialGuess =
 
-        // Evaluate the density function at all observations for the given parameters
-        let densityEval pDists =
-            let d = model.Likelihood pDists
+        // Evaluate the density function at all observations for the given parameters,
+        // using all the information available at the time.
+        let likelihoodEval theta =
             data
-            |> Array.map d // Prob of this point for the given dist
+            |> Array.mapi (fun i d -> 
+                let xhist = data.[0..i]
+                xhist |> Array.take 1 |> ignore
+                model.ConditionalLikelihood d xhist theta
+            )
 
+        // TODO: maybe we don't have to convert to logs if the ratios don't go crazy?
         // The acceptance probability function.
-        let alfa candidateTheta currentTheta =
-            // p(X|data) using the two parameter sets.
-            let densitiesCandidate = densityEval candidateTheta
-            let densitiesThetan = densityEval currentTheta
+        let acceptanceProbability candidateTheta currentTheta =
 
-            // TODO: maybe we don't have to convert to logs if the ratios don't go crazy?
-            // This idea is only applicable because of the assumption that parameters
-            // are independent.
+            // p(X|data) using the two parameter sets.
+            let densitiesCandidate = likelihoodEval candidateTheta
+            let densitiesThetan = likelihoodEval currentTheta
             let ratios = 
                 Array.zip densitiesCandidate densitiesThetan 
                 |> Array.map (fun (x, y) -> x/y)
@@ -49,14 +42,8 @@ module Mcmc =
             let priorRatio = candidatePrior / currentPrior
 
             // Density of moving from prev parameter value to current (and vice versa)
-            let numeratorMove =
-                Array.zip3 propDists currentTheta candidateTheta
-                |> Array.map (fun (pd, current, candidate) -> pd.ConditionalDensity current candidate)
-                |> Array.fold (*) 1.
-            let denominatorMove =
-                Array.zip3 propDists currentTheta candidateTheta
-                |> Array.map (fun (pd, current, candidate) -> pd.ConditionalDensity candidate current)
-                |> Array.fold (*) 1.
+            let numeratorMove = propDist.ConditionalDensity currentTheta candidateTheta |> Array.fold (*) 1.
+            let denominatorMove = propDist.ConditionalDensity candidateTheta currentTheta |> Array.fold (*) 1.
             let moveRatio = numeratorMove / denominatorMove
 
             // likelihood * prior * proposal move correction
@@ -69,13 +56,10 @@ module Mcmc =
         let markovKernel current =
 
             // Generate proposal from distributions.
-            let candidates = 
-                propDists 
-                |> Array.zip current 
-                |> Array.map (fun (c, pd) -> pd.ConditionalSample(c))
+            let candidates = propDist.ConditionalSample current
 
             // Compute acceptance probability
-            let a = alfa candidates current
+            let a = acceptanceProbability candidates current
             let u = ContinuousUniform.Sample(0., 1.)
             if (a > u) then
                 candidates
@@ -88,3 +72,28 @@ module Mcmc =
             theta <- markovKernel theta
             theta
         )
+
+    /// Given data observations, fits a model to it using Metropolis-Hastings
+    /// Thinning takes every i:th sample after skipping an initial n burn-in iterations.
+    /// The final result is of size samples.
+    let mcmcMh
+        data
+        (model: #IModel)
+        (propDist: #IProposalDistribution) 
+        initialGuess
+        burnIn
+        thinning
+        samples =
+
+        let thetaSeq = mcmcMhSeq data model propDist initialGuess
+        thetaSeq
+        |> Seq.take burnIn
+        |> Seq.toArray
+        |> ignore
+
+        thetaSeq
+        |> Seq.take (thinning * samples)
+        |> Seq.toArray
+        |> Array.mapi (fun i s -> (i % thinning = 0, s))
+        |> Array.filter (fun (i, _) -> i)
+        |> Array.map (fun (_, s) -> s)
