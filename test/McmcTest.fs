@@ -20,9 +20,11 @@ type FittingTest() =
             Normal.Samples(targetMy, sigma) 
             |> Seq.take sampleSize 
             |> Seq.toArray
+        let empiricalMy = Statistics.Mean x
+        let empiricalSigma = Statistics.Variance x
 
         let priorMy = targetMy - 0.5
-        let model = Model.normalMeanModel sigma <| NormalDistribution(priorMy, sigma)
+        let model = Model.normalMeanModel empiricalSigma <| NormalDistribution(priorMy, empiricalSigma)
 
         // Get a sequence of parameters and compute statistics from the tail of it.
         let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.01) |]
@@ -35,5 +37,5 @@ type FittingTest() =
            
         // Then the means are well within our tolerated range
         let tol = 0.15
-        Assert.InRange(myMean, targetMy - targetMy*tol, targetMy + targetMy*tol)
+        Assert.InRange(myMean, empiricalMy - empiricalMy*tol, empiricalMy + empiricalMy*tol)
         Assert.True(myStd < 1.)
