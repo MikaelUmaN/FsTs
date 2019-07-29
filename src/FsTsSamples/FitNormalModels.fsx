@@ -16,6 +16,24 @@ open FsTs.Distributions
 open MathNet.Numerics.Distributions
 open MathNet.Numerics.Statistics
 
+let fitNormalModel targetMy targetSigma =
+    let sampleSize = 1000
+    let x = 
+        Normal.Samples(targetMy, targetSigma) 
+        |> Seq.take sampleSize 
+        |> Seq.toArray
+
+    let priorSigma = targetSigma + 0.1
+    let priorMy = targetMy - 0.5
+    let model = Model.normalModel [| 
+        NormalDistribution(priorMy, 10.) :> FsTsIDistribution
+        UniformDistribution(1e-2, 5.) :> FsTsIDistribution 
+    |]
+
+    // Get a sequence of parameters and compute statistics from the tail of it.
+    let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.01); NormalDistribution(0., 0.01) |]
+    Mcmc.mcmcMh x model pDist [| priorMy; priorSigma |] 1000 5 2000
+
 let fitNormalMeanModel targetMy sigma =
     let sampleSize = 1000
     let x = 
@@ -39,8 +57,9 @@ let fitNormalVarianceModel my targetSigma =
         |> Seq.take sampleSize 
         |> Seq.toArray
 
+    let empiricalMy = Statistics.Mean x
     let priorSigma = targetSigma + 0.1
-    let model = Model.normalVarianceModel my <| NormalDistribution(my, priorSigma)
+    let model = Model.normalVarianceModel empiricalMy <| UniformDistribution(1e-2, 10.)
 
     // Get a sequence of parameters and compute statistics from the tail of it.
     let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.01) |]

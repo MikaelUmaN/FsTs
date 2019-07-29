@@ -8,6 +8,8 @@ module Model =
 
     open MathNet.Numerics.Distributions
 
+    let minVal = 1e-8
+
     type ILikelihoodFunction =    
         /// Evaluates the conditional likelihood of a data point at the given parameters,
         /// given the information set available at the time of the data point (e.g. the data history).
@@ -37,15 +39,18 @@ module Model =
     /// location and variance.
     let normalLikelihood =
         { new ILikelihoodFunction with
-            member __.ConditionalLikelihood x _ theta = Normal.PDF(theta.[0], theta.[1], x)
+            member __.ConditionalLikelihood x _ theta = 
+                if (theta.[1] < minVal) then 0. else Normal.PDF(theta.[0], theta.[1], x)
         }
     let normalMeanLikelihood sigma =
         { new ILikelihoodFunction with
-            member __.ConditionalLikelihood x _ theta = Normal.PDF(theta.[0], sigma, x)
+            member __.ConditionalLikelihood x _ theta = 
+                 if (sigma < minVal) then 0. else Normal.PDF(theta.[0], sigma, x)
         }
     let normalVarianceLikelihood my =
          { new ILikelihoodFunction with
-             member __.ConditionalLikelihood x _ theta = Normal.PDF(my, theta.[0], x)
+             member __.ConditionalLikelihood x _ theta = 
+                if (theta.[0] < minVal) then 0. else Normal.PDF(my, theta.[0], x)
          }
 
     let normalMeanModel sigma dist = 
@@ -53,7 +58,7 @@ module Model =
     let normalVarianceModel my dist = 
         independentParametersModel (normalVarianceLikelihood my) [| dist |] 
     let normalModel dist =
-        independentParametersModel normalLikelihood [| dist |]
+        independentParametersModel normalLikelihood dist
 
 
 

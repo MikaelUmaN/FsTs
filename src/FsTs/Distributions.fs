@@ -26,6 +26,10 @@ module Distributions =
             member __.Sample() = Normal.Sample(my, sigma)
             member __.Density x = Normal.PDF(my, sigma, x)
 
+    type UniformDistribution(a, b) =
+        interface IDistribution with
+            member __.Sample() = ContinuousUniform.Sample(a, b)
+            member __.Density x = ContinuousUniform.PDF(a, b, x)
 
     /// A multivariate proposal distribution used to propose new values
     /// of parameters used in a model.
