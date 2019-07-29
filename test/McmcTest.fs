@@ -10,10 +10,39 @@ open MathNet.Numerics.Statistics
 type FittingTest() =
 
     [<Fact>]
-    member __.FitNormalMeanTest() =
+    member __.FitNormalVarianceTest() =
+        let targetSigma = 2.
+        let my = 10.
+        let sampleSize = 1000
+        let x = 
+            Normal.Samples(my, targetSigma) 
+            |> Seq.take sampleSize 
+            |> Seq.toArray
+        let empiricalMy = Statistics.Mean x
+        let empiricalSigma = Statistics.Variance x
 
-        // Data to fit.
-        let sampleSize = 500
+        let priorSigma = targetSigma + 0.1
+        let model = Model.normalVarianceModel empiricalMy <| NormalDistribution(empiricalMy, priorSigma)
+
+        // Get a sequence of parameters and compute statistics from the tail of it.
+        let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.01) |]
+        let thetaSamples = Mcmc.mcmcMh x model pDist [| priorSigma |] 1000 5 2000
+        let sigmaEstimates =
+            thetaSamples 
+            |> Array.map (fun theta -> theta.[0])
+
+        let sigmaMean = Statistics.Mean sigmaEstimates
+        let sigmaStd = sqrt <| Statistics.Variance sigmaEstimates
+           
+        // Then the means are well within our tolerated range
+        let tol = 0.15
+        Assert.InRange(sigmaMean, empiricalMy - empiricalSigma*tol, empiricalSigma + empiricalSigma*tol)
+        Assert.True(sigmaStd < 1.)
+
+
+    [<Fact>]
+    member __.FitNormalMeanTest() =
+        let sampleSize = 1000
         let targetMy = 100.5
         let sigma = 1.
         let x = 
@@ -32,6 +61,7 @@ type FittingTest() =
         let myEstimates = 
             thetaSamples 
             |> Array.map (fun theta -> theta.[0])
+
         let myMean = Statistics.Mean myEstimates
         let myStd = sqrt <| Statistics.Variance myEstimates
            
