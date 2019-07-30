@@ -65,7 +65,7 @@ type FittingTest() =
         let empiricalSigma = Statistics.Variance x |> sqrt
 
         let priorSigma = targetSigma + 0.1
-        let model = Model.normalVarianceModel empiricalMy <| UniformDistribution(1e-2, 5.)
+        let model = UniformDistribution(1e-2, 5.) |> Model.normalVarianceModel empiricalMy
 
         // Get a sequence of parameters and compute statistics from the tail of it.
         let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.01) |]
@@ -77,6 +77,37 @@ type FittingTest() =
         let sigmaMean = Statistics.Mean sigmaEstimates
         let sigmaStd = Statistics.Variance sigmaEstimates |> sqrt
            
+        // Then the means are well within our tolerated range
+        let tol = 0.15
+        Assert.InRange(sigmaMean, empiricalSigma - empiricalSigma*tol, empiricalSigma + empiricalSigma*tol)
+        Assert.True(sigmaStd < 1.)
+
+    [<Fact>]
+    member __.FitNormalVarianceUsingNonFlatPriorTest() =
+        let targetSigma = 2.
+        let my = 10.
+        let sampleSize = 1000
+        let x = 
+            Normal.Samples(my, targetSigma) 
+            |> Seq.take sampleSize 
+            |> Seq.toArray
+        let empiricalMy = Statistics.Mean x
+        let empiricalSigma = Statistics.Variance x |> sqrt
+
+        // Half-Cauchy means we ignore anything < 0
+        let priorSigma = targetSigma + 0.5
+        let model = CauchyDistribution(priorSigma, 5.) |> Model.normalVarianceModel empiricalMy
+
+        // Get a sequence of parameters and compute statistics from the tail of it.
+        let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.01) |]
+        let thetaSamples = Mcmc.mcmcMh x model pDist [| priorSigma |] 1000 1 1000
+        let sigmaEstimates =
+            thetaSamples 
+            |> Array.map (fun theta -> theta.[0])
+
+        let sigmaMean = Statistics.Mean sigmaEstimates
+        let sigmaStd = Statistics.Variance sigmaEstimates |> sqrt
+       
         // Then the means are well within our tolerated range
         let tol = 0.15
         Assert.InRange(sigmaMean, empiricalSigma - empiricalSigma*tol, empiricalSigma + empiricalSigma*tol)
@@ -95,7 +126,7 @@ type FittingTest() =
         let empiricalSigma = Statistics.Variance x |> sqrt
 
         let priorMy = targetMy - 0.5
-        let model = Model.normalMeanModel empiricalSigma <| NormalDistribution(priorMy, 10.)
+        let model =  NormalDistribution(priorMy, 10.) |> Model.normalMeanModel empiricalSigma
 
         // Get a sequence of parameters and compute statistics from the tail of it.
         let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.01) |]

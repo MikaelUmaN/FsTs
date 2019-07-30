@@ -1,14 +1,11 @@
 ﻿#load "FitNormalModels.fsx"
 
 #I __SOURCE_DIRECTORY__
-#I @"bin\debug\netcoreapp2.2"
-#I @"C:\Users\mikae\.nuget\packages"
+#I @"bin/debug/netcoreapp2.2"
+#I @"../../.paket/load"
+#load @"netstandard2.1/main.group.fsx"
 
-//#r "FsTs.dll"
-//#r @"mathnet.numerics\4.8.1\lib\netstandard2.0\MathNet.Numerics.dll"
-//#r @"mathnet.numerics.fsharp\4.8.1\lib\netstandard2.0\MathNet.Numerics.FSharp.dll"
-#r @"fsharp.data\3.1.1\lib\netstandard2.0\FSharp.Data.dll"
-#r @"csvhelper\12.1.2\lib\netstandard2.0\CsvHelper.dll"
+#r "FsTs.dll"
 
 open System
 open System.IO
@@ -19,6 +16,7 @@ open System.Globalization
 #time
 let (thetaEstimates, empiricalMy, empiricalSigma) = FitNormalModels.fitNormalModel 10. 2.35 2000 1000 1 5000
 #time
+
 let thetaRecords =
     thetaEstimates
     |> Array.map (fun t -> {| My = t.[0]; Sigma = t.[1] |})
@@ -35,7 +33,7 @@ csvWriter.Dispose()
 
 
 
-// Note: Below is 
+// Note: Below is code based on Csv type provider.
 let myEstimates = FitNormalModels.fitNormalMeanModel 10. 1.
 type ThetaTraceCsv = 
     CsvProvider<Sample = "Iteration, Theta\r\n1, 2.2",

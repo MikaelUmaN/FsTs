@@ -1,15 +1,27 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26124.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29123.88
 MinimumVisualStudioVersion = 15.0.26124.0
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{FA7EA06C-044F-48AA-AAFC-C95DD54DDAFC}"
+	ProjectSection(SolutionItems) = preProject
+		paket.dependencies = paket.dependencies
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C42FB033-8054-46E2-B43A-E622719B4645}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsTsSamples", "src\FsTsSamples\FsTsSamples.fsproj", "{1BF9BC85-2105-4C4B-BFF6-D9F4CD67AC0B}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FsTsSamples", "src\FsTsSamples\FsTsSamples.fsproj", "{1BF9BC85-2105-4C4B-BFF6-D9F4CD67AC0B}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsTs", "src\FsTs\FsTs.fsproj", "{BE04A029-3D08-484B-945A-CE0AFFAA386D}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FsTs", "src\FsTs\FsTs.fsproj", "{BE04A029-3D08-484B-945A-CE0AFFAA386D}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsTs.Test", "test\FsTs.Test.fsproj", "{027201B3-BEBF-45AC-9FC1-DECD36B6F8EE}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FsTs.Test", "test\FsTs.Test.fsproj", "{027201B3-BEBF-45AC-9FC1-DECD36B6F8EE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{8A8C28C0-A8C6-41BF-9737-C44DD0659628}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{90AF46A0-DEC7-4BC9-8593-770EB4877E67}"
+	ProjectSection(SolutionItems) = preProject
+		build.fsx = build.fsx
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,9 +31,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{1BF9BC85-2105-4C4B-BFF6-D9F4CD67AC0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -61,8 +70,15 @@ Global
 		{027201B3-BEBF-45AC-9FC1-DECD36B6F8EE}.Release|x86.ActiveCfg = Release|Any CPU
 		{027201B3-BEBF-45AC-9FC1-DECD36B6F8EE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1BF9BC85-2105-4C4B-BFF6-D9F4CD67AC0B} = {C42FB033-8054-46E2-B43A-E622719B4645}
 		{BE04A029-3D08-484B-945A-CE0AFFAA386D} = {C42FB033-8054-46E2-B43A-E622719B4645}
+		{027201B3-BEBF-45AC-9FC1-DECD36B6F8EE} = {8A8C28C0-A8C6-41BF-9737-C44DD0659628}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8FF7CBC7-93DC-4165-9C79-87A51B2056E2}
 	EndGlobalSection
 EndGlobal

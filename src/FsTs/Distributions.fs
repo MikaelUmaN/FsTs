@@ -20,6 +20,19 @@ module Distributions =
             member __.Sample() = Gamma.Sample(shape, rate)
             member __.Density x = Gamma.PDF(shape, rate, x)
 
+    type CauchyDistribution(location, scale) =
+        interface IDistribution with
+            member __.Sample() = Cauchy.Sample(location, scale)
+            member __.Density x = Cauchy.PDF(location, scale, x)
+
+    // Left half is just set to zero. -> TODO: does not work.
+    type HalfCauchyDistribution(location, scale) =
+        interface IDistribution with
+            member __.Sample() =
+                let mutable s = Cauchy.Sample(location, scale)
+                while (s < location) do s <- Cauchy.Sample(location, scale)
+                s
+            member __.Density x = if x < location then 0. else 2. * Cauchy.PDF(location, scale, x)
 
     type NormalDistribution(my, sigma) =
         interface IDistribution with

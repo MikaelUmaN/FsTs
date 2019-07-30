@@ -60,8 +60,6 @@ module Model =
     let normalModel dist =
         independentParametersModel normalLikelihood dist
 
-
-
     // Below was just a test...
     type ModelSpec =
     | AR of p: int
