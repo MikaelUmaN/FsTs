@@ -24,31 +24,28 @@ module Mcmc =
                 model.ConditionalLikelihood d xhist theta
             )
 
-        // TODO: maybe we don't have to convert to logs if the ratios don't go crazy?
         // The acceptance probability function.
+        // Based on difference between sum of logs of numerator and denominator.
         let acceptanceProbability candidateTheta currentTheta =
 
             // p(X|data) using the two parameter sets.
-            let densitiesCandidate = likelihoodEval candidateTheta
-            let densitiesThetan = likelihoodEval currentTheta
-            let ratios = 
-                Array.zip densitiesCandidate densitiesThetan 
-                |> Array.map (fun (x, y) -> x/y)
-            let likelihoodRatio = ratios |> Array.fold (*) 1.
+            let densitiesCandidate = likelihoodEval candidateTheta |> Array.map log |> Array.sum
+            let densitiesThetan = likelihoodEval currentTheta |> Array.map log |> Array.sum
 
             // Density of the prior
-            let candidatePrior = model.PriorDensities candidateTheta |> Array.fold (*) 1.
-            let currentPrior = model.PriorDensities currentTheta |> Array.fold (*) 1.
-            let priorRatio = candidatePrior / currentPrior
+            let candidatePrior = model.PriorDensities candidateTheta |> Array.map log |> Array.sum
+            let currentPrior = model.PriorDensities currentTheta |> Array.map log |> Array.sum
 
             // Density of moving from prev parameter value to current (and vice versa)
-            let numeratorMove = propDist.ConditionalDensity currentTheta candidateTheta |> Array.fold (*) 1.
-            let denominatorMove = propDist.ConditionalDensity candidateTheta currentTheta |> Array.fold (*) 1.
-            let moveRatio = numeratorMove / denominatorMove
+            let numeratorMove = propDist.ConditionalDensity currentTheta candidateTheta |> Array.map log |> Array.sum
+            let denominatorMove = propDist.ConditionalDensity candidateTheta currentTheta |> Array.map log |> Array.sum
 
             // likelihood * prior * proposal move correction
-            let a = likelihoodRatio * priorRatio * moveRatio
-            min a 1.
+            let numeratorSum = densitiesCandidate + candidatePrior + numeratorMove
+            let denominatorSum = densitiesThetan + currentPrior + denominatorMove
+            let a = numeratorSum - denominatorSum
+            let logA = min a 0. // ln 1 = 0
+            exp logA // Get back to normal scale
 
         // One step in the markov kernel.
         // Computes a new candidate given the current state of the chain,

@@ -30,7 +30,7 @@ type FittingTest() =
 
         // Get a sequence of parameters and compute statistics from the tail of it.
         let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.01); NormalDistribution(0., 0.01) |]
-        let thetaSamples = Mcmc.mcmcMh x model pDist [| priorMy; priorSigma |] 1000 5 2000
+        let thetaSamples = Mcmc.mcmcMh x model pDist [| priorMy; priorSigma |] 1000 1 1000
         let myEstimates =
             thetaSamples 
             |> Array.map (fun theta -> theta.[0])
@@ -69,7 +69,7 @@ type FittingTest() =
 
         // Get a sequence of parameters and compute statistics from the tail of it.
         let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.01) |]
-        let thetaSamples = Mcmc.mcmcMh x model pDist [| priorSigma |] 1000 5 2000
+        let thetaSamples = Mcmc.mcmcMh x model pDist [| priorSigma |] 1000 1 1000
         let sigmaEstimates =
             thetaSamples 
             |> Array.map (fun theta -> theta.[0])
@@ -99,7 +99,7 @@ type FittingTest() =
 
         // Get a sequence of parameters and compute statistics from the tail of it.
         let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.01) |]
-        let thetaSamples = Mcmc.mcmcMh x model pDist [| priorMy |] 1000 5 2000
+        let thetaSamples = Mcmc.mcmcMh x model pDist [| priorMy |] 1000 1 1000
         let myEstimates = 
             thetaSamples 
             |> Array.map (fun theta -> theta.[0])

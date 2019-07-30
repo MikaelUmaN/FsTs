@@ -16,23 +16,27 @@ open FsTs.Distributions
 open MathNet.Numerics.Distributions
 open MathNet.Numerics.Statistics
 
-let fitNormalModel targetMy targetSigma =
-    let sampleSize = 1000
+let fitNormalModel targetMy targetSigma burnIn dataSampleSize thinning posteriorSampleSize =
+    let sampleSize = dataSampleSize
     let x = 
         Normal.Samples(targetMy, targetSigma) 
         |> Seq.take sampleSize 
         |> Seq.toArray
+    let empiricalMy = Statistics.Mean x
+    let empiricalSigma = Statistics.Variance x |> sqrt
 
     let priorSigma = targetSigma + 0.1
     let priorMy = targetMy - 0.5
     let model = Model.normalModel [| 
         NormalDistribution(priorMy, 10.) :> FsTsIDistribution
-        UniformDistribution(1e-2, 5.) :> FsTsIDistribution 
+        UniformDistribution(1e-2, 10.) :> FsTsIDistribution 
     |]
 
     // Get a sequence of parameters and compute statistics from the tail of it.
-    let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.01); NormalDistribution(0., 0.01) |]
-    Mcmc.mcmcMh x model pDist [| priorMy; priorSigma |] 1000 5 2000
+    let pDist = independentMultivariateProposalDistribution [| NormalDistribution(0., 0.1); NormalDistribution(0., 0.1) |]
+    let thetaEstimates = Mcmc.mcmcMh x model pDist [| priorMy; priorSigma |] burnIn thinning posteriorSampleSize
+
+    (thetaEstimates, empiricalMy, empiricalSigma)
 
 let fitNormalMeanModel targetMy sigma =
     let sampleSize = 1000
