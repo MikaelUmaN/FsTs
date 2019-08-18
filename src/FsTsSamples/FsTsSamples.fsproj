@@ -8,6 +8,7 @@
     <None Include="paket.references" />
     <Compile Include="Program.fs" />
     <None Include="FitNormalModels.fsx" />
+    <None Include="TimeSeriesModels.fsx" />
     <None Include="Playground.fsx" />
   </ItemGroup>
   <ItemGroup>

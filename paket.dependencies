@@ -5,10 +5,12 @@ source https://www.nuget.org/api/v2
 
 
 nuget CsvHelper 12.1.2
+nuget Deedle
 nuget FSharp.Core
 nuget FSharp.Data 3.1.1
 nuget MathNet.Numerics 4.8.1
 nuget MathNet.Numerics.FSharp 4.8.1
 nuget Microsoft.NET.Test.Sdk 16.1.1
+nuget XPlot.Plotly
 nuget xunit 2.4.1
 nuget xunit.runner.visualstudio 2.4.1
