@@ -1,5 +1,9 @@
 ﻿namespace FsTs
 
+open Model
+open MathNet.Numerics.Distributions
+open System
+
 module TimeSeriesModel =
 
     let slideArr xt (xs: float[]) =
@@ -69,3 +73,21 @@ module TimeSeriesModel =
             zs <- slideArr zt zs
             xt
         )
+
+    /// Uses the fact that Xt is conditionally normally distributed as the sum of
+    /// equi-distributed normal random variables with variances scaled by the parameters.
+    let armaNormalLikelihood p q =
+        { new ILikelihoodFunction with
+            member __.ConditionalLikelihood(x: float) (xhist: float []) (theta: float []): float = 
+                let c = theta.[0] // location
+                let phis = theta.[1..p] // AR params
+                let thetas = theta.[p+1..p+q] // MA params
+                let std = Array.last theta // Assumes constant std
+
+                let mean = c + autoregress phis xhist
+                let sumVar = std*std + (thetas |> Array.map (fun t -> t*t * std*std) |> Array.sum) // Var(a*X) = a^2 * Var(X)
+                Normal.PDF(mean, Math.Sqrt(sumVar), x)
+        }
+
+    let armaModel p q dist =
+        independentParametersModel (armaNormalLikelihood p q) dist
