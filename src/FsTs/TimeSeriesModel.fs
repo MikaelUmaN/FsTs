@@ -74,6 +74,32 @@ module TimeSeriesModel =
             xt
         )
 
+    let arNormalLikelihood1 p c std =
+        { new ILikelihoodFunction with
+            member __.ConditionalLikelihood(x: float) (xhist: float []) (theta: float []): float = 
+                let phis = theta.[0..p-1] // AR params
+
+                let mean = c + autoregress phis xhist
+                if std < 0. then 0. else Normal.PDF(mean, std, x)
+        }
+
+    let arModel1 p c std dist =
+        independentParametersModel (arNormalLikelihood1 p c std) dist
+
+    let arNormalLikelihood p =
+        { new ILikelihoodFunction with
+            member __.ConditionalLikelihood(x: float) (xhist: float []) (theta: float []): float = 
+                let c = theta.[0] // location
+                let phis = theta.[1..p] // AR params
+                let std = Array.last theta // Assumes constant std
+
+                let mean = c + autoregress phis xhist
+                if std < 0. then 0. else Normal.PDF(mean, std, x)
+        }
+
+    let arModel p dist =
+        independentParametersModel (arNormalLikelihood p) dist
+
     /// Uses the fact that Xt is conditionally normally distributed as the sum of
     /// equi-distributed normal random variables with variances scaled by the parameters.
     let armaNormalLikelihood p q =
@@ -86,7 +112,7 @@ module TimeSeriesModel =
 
                 let mean = c + autoregress phis xhist
                 let sumVar = std*std + (thetas |> Array.map (fun t -> t*t * std*std) |> Array.sum) // Var(a*X) = a^2 * Var(X)
-                Normal.PDF(mean, Math.Sqrt(sumVar), x)
+                if sumVar < 0. then 0. else Normal.PDF(mean, Math.Sqrt(sumVar), x)
         }
 
     let armaModel p q dist =

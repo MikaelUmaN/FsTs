@@ -6,9 +6,9 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="paket.references" />
-    <Compile Include="McmcTest.fs" />
+    <Compile Include="NormalModelsTest.fs" />
+    <Compile Include="ARModelTest.fs" />
     <Compile Include="TimeSeriesTest.fs" />
-    <Compile Include="ModelTest.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\src\FsTs\FsTs.fsproj" />

@@ -19,30 +19,25 @@ module Distributions =
         interface IDistribution with
             member __.Sample() = Gamma.Sample(shape, rate)
             member __.Density x = Gamma.PDF(shape, rate, x)
+    type G = GammaDistribution
 
     type CauchyDistribution(location, scale) =
         interface IDistribution with
             member __.Sample() = Cauchy.Sample(location, scale)
             member __.Density x = Cauchy.PDF(location, scale, x)
-
-    // Left half is just set to zero. -> TODO: does not work.
-    type HalfCauchyDistribution(location, scale) =
-        interface IDistribution with
-            member __.Sample() =
-                let mutable s = Cauchy.Sample(location, scale)
-                while (s < location) do s <- Cauchy.Sample(location, scale)
-                s
-            member __.Density x = if x < location then 0. else 2. * Cauchy.PDF(location, scale, x)
+    type C = CauchyDistribution
 
     type NormalDistribution(my, sigma) =
         interface IDistribution with
             member __.Sample() = Normal.Sample(my, sigma)
             member __.Density x = Normal.PDF(my, sigma, x)
+    type N = NormalDistribution
 
     type UniformDistribution(a, b) =
         interface IDistribution with
             member __.Sample() = ContinuousUniform.Sample(a, b)
             member __.Density x = ContinuousUniform.PDF(a, b, x)
+    type U = UniformDistribution
 
     /// A multivariate proposal distribution used to propose new values
     /// of parameters used in a model.

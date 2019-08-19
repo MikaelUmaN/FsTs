@@ -19,8 +19,7 @@ module Mcmc =
         let likelihoodEval theta =
             data
             |> Array.mapi (fun i d -> 
-                let xhist = data.[0..i]
-                xhist |> Array.take 1 |> ignore
+                let xhist = data.[0..i-1]
                 model.ConditionalLikelihood d xhist theta
             )
 

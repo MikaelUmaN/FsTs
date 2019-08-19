@@ -7,7 +7,7 @@ open Xunit
 open MathNet.Numerics.Distributions
 open MathNet.Numerics.Statistics
 
-type FittingTest() =
+type NormalModelsTest() =
 
     [<Fact>]
     member __.FitNormalModelTest() =
