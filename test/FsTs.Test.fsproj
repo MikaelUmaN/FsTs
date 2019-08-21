@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="paket.references" />
+    <Compile Include="AutocorrelationTest.fs" />
     <Compile Include="NormalModelsTest.fs" />
     <Compile Include="ARModelTest.fs" />
     <Compile Include="TimeSeriesTest.fs" />
