@@ -1,9 +1,7 @@
 ﻿#load "FitNormalModels.fsx"
 
 #I __SOURCE_DIRECTORY__
-#I @"bin/debug/netcoreapp2.2"
-#I @"../../.paket/load"
-#load @"netstandard2.1/main.group.fsx"
+#I @"bin/debug/net5"
 
 #r "FsTs.dll"
 

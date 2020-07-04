@@ -11,7 +11,7 @@ open MathNet.Numerics.Statistics
 
 type ARModelTest() =
 
-    // Just tro to fit the phi parameter - all else is known.
+    // Just try to fit the phi parameter - all else is known.
     [<Fact>]
     member __.FitSimpleAR1ModelTest() =
         let c = 0.003

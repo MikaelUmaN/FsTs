@@ -15,8 +15,7 @@ module TimeSeriesModel =
         |> Array.rev
         |> Array.take lags
         |> Array.zip (pqs |> Array.take lags)
-        |> Array.map (fun (phi, xt) -> phi * xt)
-        |> Array.sum
+        |> Array.sumBy (fun (phi, xt) -> phi * xt)
 
     /// Produces a single sample from an AR P model.
     /// phis are ordered 1 to t
