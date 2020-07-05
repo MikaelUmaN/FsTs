@@ -1,4 +1,4 @@
-namespace FsFin.Test
+namespace FsTs.Test
 
 module Program =
     
