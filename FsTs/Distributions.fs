@@ -15,6 +15,13 @@ module Distributions =
         /// Computes the density of the distribution at the given point.
         abstract Density: float -> float
 
+    /// A random variable with a given name that follows a certain distribution.
+    type RandomVariable(name: string, dist: IDistribution) =
+        member val Name = name with get
+        member val Dist = dist with get
+    type RV = RandomVariable
+    let inline (=~) (name: string) (dist: IDistribution) = RV(name, dist)
+
     type GammaDistribution(shape, rate) =
         interface IDistribution with
             member __.Sample() = Gamma.Sample(shape, rate)
